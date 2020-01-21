@@ -1,24 +1,64 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { Fragment, useState } from 'react';
 import './App.css';
+import { Provider, inject, observer } from 'mobx-react';
+import { todoStore, ItodoType } from './stores/todo';
+import uuidv4 from 'uuid/v4';
+
+const TodoList = inject("todoStore")(
+  observer(({ todoStore }) => {
+
+    return (
+      <ul>
+        <h3>Todos Count: {todoStore.todoCount as string}</h3>
+        {todoStore.todos.map((todo: ItodoType) => {
+          return (<li key={todo.id}>
+            <span onClick={() => { todoStore.deleteTodo(todo.id) }}>{todo.title as string}</span> - <input type="checkbox" defaultChecked={todo.completed} onChange={() => { todoStore.toggleCompleted(todo.id) }} />
+          </li>)
+        })}
+      </ul>
+    )
+  })
+)
+
+const AddToDo = inject("todoStore")(
+  observer(({ todoStore }) => {
+
+    const [title, setTitle] = useState('');
+
+    const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+      setTitle(e.currentTarget.value);
+    }
+
+    const addTodo = () => {
+
+      let newTodo = {
+        id: uuidv4(),
+        title,
+        completed: false
+      }
+
+      todoStore.addTodo(newTodo);
+
+      setTitle('');
+
+    }
+
+    return (
+      <Fragment>
+        <input type="text" onChange={onChange} value={title} placeholder="Enter Todo: " />
+        <button onClick={addTodo}>Add Todo</button>
+      </Fragment>
+    )
+  })
+)
 
 const App: React.FC = () => {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Provider todoStore={todoStore}>
+        <TodoList />
+        <AddToDo />
+      </Provider>
     </div>
   );
 }
